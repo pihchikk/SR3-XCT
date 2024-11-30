@@ -16,7 +16,7 @@ This repository implements super-resolution techniques for soil tomography, adap
 </table>
 </p>
 
-## Setup
+## Setup and running inference using pretrained models
 
 1. **Install Dependencies**  
    Run:
