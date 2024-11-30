@@ -4,6 +4,20 @@ This repository implements super-resolution techniques for soil tomography, adap
 
 ---
 
+## Sample Results
+<p align="center">
+<table>
+  <tr>
+    <td><img src="example data/lr_32/input_image.png" width="400"/></td>
+    <td><img src="example data/hr_256/input_image.png" width="400"/></td>
+  </tr>
+  <tr>
+    <td align="center">Low-resolution input (32x32)</td>
+    <td align="center">Super-resolved output (256x256)</td>
+  </tr>
+</table>
+</p>
+
 ## Setup
 
 1. **Install Dependencies**  
@@ -28,5 +42,5 @@ python sr3.py --phase val -c config/inference/32_256/deep.yaml
 
     --phase: Specify the mode (val for inference).  
     -c: Path to the YAML configuration file.  
-    --num_iterations: (Optional)  Number of refinement steps for better structural reconstruction (default is 1).
+    --num_iterations: (Optional)  Number of refinement steps for better structure (default is 1).
 
