@@ -3,8 +3,6 @@
 This repository implements super-resolution techniques for soil tomography, adapted from [Image-Super-Resolution-via-Iterative-Refinement](https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement).
 
 ---
-
-## Sample Results
 <p align="center">
 <table>
   <tr>
