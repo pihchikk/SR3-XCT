@@ -9,11 +9,11 @@ This repository implements super-resolution techniques for soil tomography, adap
 <table>
   <tr>
     <td><img src="example data/lr_32/input_image.png" width="400"/></td>
-    <td><img src="example data/sr_32_256/input_image.png" width="400"/></td>
+    <td><img src="example data/hr_256/input_image.png" width="400"/></td>
   </tr>
   <tr>
     <td align="center">Low-resolution input (32x32)</td>
-    <td align="center">Super-resolved output (256x256)</td>
+    <td align="center">High-res output (256x256)</td>
   </tr>
 </table>
 </p>
