@@ -26,9 +26,6 @@ This repository implements super-resolution techniques for soil tomography, adap
    pip install -r requirements.txt
    ```
 
-python sr3.py --phase val -c config/inference/32_256/deep.yaml
-
-
 2. **Download Pretrained Model**
    [Download the pretrained model](https://drive.google.com/file/d/12eU2cIx4NetzOgkx3rppj-4vpPVxuU0M/view?usp=sharing) and put it into pretrained models folder
    
@@ -36,7 +33,10 @@ python sr3.py --phase val -c config/inference/32_256/deep.yaml
    Place your low-resolution input images in the example_data/lr_32/ folder
 
 4. **Running inference**
-   run python sr3.py --phase val -c config/inference/32_256/deep.yaml
+   Run:
+   ```bash
+   python sr3.py --phase val -c config/inference/32_256/deep.yaml
+   ```
 
     Arguments 
 
