@@ -24,7 +24,7 @@ This repository implements super-resolution techniques for soil tomography, adap
    Run:
    ```bash
    pip install -r requirements.txt
-
+   ```
 
 python sr3.py --phase val -c config/inference/32_256/deep.yaml
 
