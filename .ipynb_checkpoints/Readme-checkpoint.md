@@ -6,11 +6,13 @@ Install dependencies:
 
 pip install -r requirements.txt
 
-Ensure you have a compatible GPU environment (e.g., NVIDIA GeForce RTX 4090).
+Ensure you have a compatible GPU environment
+
+Download a pretrained model from (link) and put it into pretrained_models folder
+
+Put your data into example data lr_32 folder
 
 ## Running Inference
-
-To run inference and generate super-resolved images:
 
 Prepare your configuration file (e.g., config/inference/32_256/deep.yaml).
 
@@ -20,11 +22,10 @@ python sr3.py --phase val -c config/inference/32_256/deep.yaml
 
 --phase: Specify the operation mode (train or val). For inference, use val.
 
---config: Path to the configuration file (YAML or JSON).
+--config: Path to the configuration file (YAML).
 
---num_iterations: Number of iterations for generating and evaluating super-resolved images (default: 15).
+--num_iterations: Number of inference iterations to improve the structural quality of the super-resolved image (default: 15).
 
-Output
 
 ## Acknowledgments
 

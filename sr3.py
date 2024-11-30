@@ -134,10 +134,6 @@ def select_best_image(psnr_scores, ssim_scores):
 
     return best_index
     
-
-####### Pure PSNR-controlled evaluation 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str,
