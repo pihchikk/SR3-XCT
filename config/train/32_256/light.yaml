@@ -1,0 +1,78 @@
+name: soilCT_x8
+phase: train
+gpu_ids:
+- 0
+distributed: true
+path:
+  log: logs
+  tb_logger: tb_logger
+  results: results
+  checkpoint: checkpoint
+  resume_state: /home/jovyan/work/ddpm_sr3_soil/experiments/soilCT_240425_113011/checkpoint/I230000_E105
+datasets:
+  train:
+    name: soilCT
+    mode: LRHR
+    dataroot: /home/jovyan/work/Datasets/Data/17K_889MICRO/train
+    datatype: img
+    l_resolution: 32
+    r_resolution: 256
+    batch_size: 8
+    num_workers: 8
+    use_shuffle: true
+    data_len: -1
+  val:
+    name: soilVal
+    mode: LRHR
+    dataroot: /home/jovyan/work/ddpm_sr3_soil/eval_imgs/pngs
+    datatype: img
+    l_resolution: 32
+    r_resolution: 256
+    data_len: -1
+model:
+  which_model_G: sr3
+  finetune_norm: false
+  unet:
+    in_channel: 2
+    out_channel: 1
+    inner_channel: 64
+    norm_groups: 16
+    channel_multiplier:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 8
+    attn_res:
+    - 16
+    res_blocks: 2
+    dropout: 0.2
+  beta_schedule:
+    train:
+      schedule: linear
+      n_timestep: 6000
+      linear_start: 1.0e-08
+      linear_end: 0.01
+    val:
+      schedule: linear
+      n_timestep: 6000
+      linear_start: 1.0e-08
+      linear_end: 0.03
+  diffusion:
+    image_size: 256
+    channels: 1
+    conditional: true
+train:
+  n_iter: 1000000
+  val_freq: 10000.0
+  save_checkpoint_freq: 10000.0
+  print_freq: 200
+  optimizer:
+    type: adam
+    lr: 0.0001
+  ema_scheduler:
+    step_start_ema: 5000
+    update_ema_every: 1
+    ema_decay: 0.9999
+wandb:
+  project: sr_soilCTx8
