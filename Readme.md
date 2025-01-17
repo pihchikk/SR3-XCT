@@ -29,7 +29,7 @@ This repository implements super-resolution techniques for soil tomography, adap
 3. **Prepare Input Data**
    Place your low-resolution input images in the example_data/lr_32/ folder
 
-4. **Running inference**
+5. **Running inference**
    Run:
    ```bash
    python sr3.py --phase val -c config/inference/32_256/deep.yaml
