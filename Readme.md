@@ -38,7 +38,7 @@ This repository implements super-resolution techniques for soil tomography, adap
 
     Arguments 
 
-    --phase: Specify the mode (val for inference).  
-    -c: Path to the YAML configuration file.  
-    --num_iterations: (Optional)  Number of refinement steps for better structure (default is 1).
+    ```--phase```: Specify the mode (val for inference).  
+    ```-c```: Path to the YAML configuration file.  
+    ```--num_iterations```: (Optional)  Number of refinement steps for better structure (default is 1).
 
