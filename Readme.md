@@ -28,7 +28,7 @@ This repository implements super-resolution techniques for soil tomography, adap
    
 3. **Prepare Input Data**
 
-   Place your low-resolution input images in the example_data/lr_32/ folder
+   Place your low-resolution input images in the ```example_data/lr_32/``` folder
 
 5. **Running inference**
    Run:
