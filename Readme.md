@@ -11,7 +11,7 @@ This repository implements super-resolution techniques for soil tomography, adap
   </tr>
   <tr>
     <td align="center">Low-resolution input (32x32)</td>
-    <td align="center">High-res output (256x256)</td>
+    <td align="center">High-resolution output (256x256)</td>
   </tr>
 </table>
 </p>
