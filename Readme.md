@@ -24,8 +24,7 @@ This repository implements super-resolution techniques for soil tomography, adap
    pip install -r requirements.txt
    ```
 
-2. **Download Pretrained Model**
-   [Download the pretrained model](https://drive.google.com/file/d/12eU2cIx4NetzOgkx3rppj-4vpPVxuU0M/view?usp=sharing) and put it into pretrained models folder
+2. [Download the pretrained model](https://drive.google.com/file/d/12eU2cIx4NetzOgkx3rppj-4vpPVxuU0M/view?usp=sharing) and put it into pretrained models folder
    
 3. **Prepare Input Data**
    Place your low-resolution input images in the example_data/lr_32/ folder
