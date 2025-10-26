@@ -1,0 +1,22 @@
+# Jupyter checkpoints
+**/.ipynb_checkpoints/
+
+# Python cache
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+logs/
+*.log
+
+# Example / temporary data
+example\ data/**
+
+# Model outputs if not using Git LFS
+pretrained\ models/*.safetensors
+
+# OS / editor files
+.DS_Store
+*.swp
