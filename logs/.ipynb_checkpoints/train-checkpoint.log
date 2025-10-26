@@ -1,0 +1,96 @@
+25-10-26 23:27:36.230 - INFO:   name: soilCT
+  phase: val
+  gpu_ids: [0]
+  distributed: True
+  path:[
+    log: logs
+    tb_logger: tb_logger
+    results: results
+    checkpoint: checkpoint
+    resume_state: pretrained models/I530000_E120
+  ]
+  datasets:[
+    train:[
+      name: soilCT
+      mode: LRHR
+      dataroot: example data
+      datatype: img
+      l_resolution: 64
+      r_resolution: 256
+      batch_size: 4
+      num_workers: 2
+      use_shuffle: True
+      data_len: -1
+    ]
+    val:[
+      name: soilVal
+      mode: LRHR
+      dataroot: example data
+      datatype: img
+      l_resolution: 64
+      r_resolution: 256
+      data_len: -1
+    ]
+  ]
+  model:[
+    which_model_G: sr3
+    finetune_norm: False
+    unet:[
+      in_channel: 2
+      out_channel: 1
+      inner_channel: 64
+      num_groups: [16, 32]
+      channel_multiplier: [1, 2, 4, 8, 8, 16]
+      attn_res: [8, 16, 32]
+      res_blocks: 4
+      dropout: 0.2
+    ]
+    beta_schedule:[
+      train:[
+        schedule: linear
+        n_timestep: 10000
+        linear_start: 1e-08
+        linear_end: 0.03
+      ]
+      val:[
+        schedule: linear
+        n_timestep: 10000
+        linear_start: 1e-08
+        linear_end: 0.03
+      ]
+    ]
+    diffusion:[
+      image_size: 256
+      channels: 1
+      conditional: True
+    ]
+  ]
+  train:[
+    n_iter: 1000000
+    val_freq: 10000.0
+    save_checkpoint_freq: 10000.0
+    print_freq: 200
+    optimizer:[
+      type: adam
+      lr: 0.0001
+    ]
+    ema_scheduler:[
+      step_start_ema: 5000
+      update_ema_every: 1
+      ema_decay: 0.9999
+    ]
+  ]
+  wandb:[
+    project: sr_soilCT_val
+  ]
+
+25-10-26 23:27:36.250 - INFO: Dataset [LRHRDataset - soilVal] is created.
+25-10-26 23:27:36.250 - INFO: Initial Dataset Finished
+25-10-26 23:27:40.598 - INFO: Loading pretrained model for G [pretrained models/I530000_E120] ...
+25-10-26 23:27:43.484 - INFO: Model [DDPM] is created.
+25-10-26 23:27:43.484 - INFO: Initial Model Finished
+25-10-26 23:27:43.484 - INFO: Resuming training from epoch: 0, iter: 0.
+25-10-26 23:27:43.510 - INFO: Begin Model Evaluation.
+25-10-26 23:35:58.153 - INFO: # Iteration 0 # PSNR: 26.9471, SSIM: 0.7074
+25-10-26 23:35:58.231 - INFO: # Validation # Best Image PSNR: 26.9471
+25-10-26 23:35:58.231 - INFO: # Validation # Best Image SSIM: 0.7074

@@ -7,7 +7,7 @@ import os
 import model.networks as networks
 from .base_model import BaseModel
 logger = logging.getLogger('base')
-
+from safetensors.torch import save_file, load_file
 
 class DDPM(BaseModel):
     def __init__(self, opt):
@@ -127,45 +127,63 @@ class DDPM(BaseModel):
         logger.info(s)
 
     def save_network(self, epoch, iter_step):
-        gen_path = os.path.join(
-            self.opt['path']['checkpoint'], 'I{}_E{}_gen.pth'.format(iter_step, epoch))
-        opt_path = os.path.join(
-            self.opt['path']['checkpoint'], 'I{}_E{}_opt.pth'.format(iter_step, epoch))
-        # gen
         network = self.netG
-        if isinstance(self.netG, nn.DataParallel):
+        if isinstance(self.netG, torch.nn.DataParallel):
             network = network.module
-        state_dict = network.state_dict()
-        for key, param in state_dict.items():
-            state_dict[key] = param.cpu()
-        torch.save(state_dict, gen_path)
-        # opt
-        opt_state = {'epoch': epoch, 'iter': iter_step,
-                     'scheduler': None, 'optimizer': None}
-        opt_state['optimizer'] = self.optG.state_dict()
-        torch.save(opt_state, opt_path)
-
-        logger.info(
-            'Saved model in [{:s}] ...'.format(gen_path))
-
+    
+        # Generator
+        gen_state = {k: v.cpu() for k, v in network.state_dict().items()}
+        gen_st_path = os.path.join(self.opt['path']['checkpoint'], f'I{iter_step}_E{epoch}_gen.safetensors')
+        save_file(gen_state, gen_st_path)
+        logger.info(f'Saved generator (safetensors) in [{gen_st_path}]')
+    
+        # Optimizer
+        opt_state = self.optG.state_dict()
+        opt_st_path = os.path.join(self.opt['path']['checkpoint'], f'I{iter_step}_E{epoch}_opt.safetensors')
+        save_file(opt_state, opt_st_path)
+        logger.info(f'Saved optimizer (safetensors) in [{opt_st_path}]')
+    
+        # Optional .pth backup
+        gen_pth = os.path.join(self.opt['path']['checkpoint'], f'I{iter_step}_E{epoch}_gen.pth')
+        torch.save(gen_state, gen_pth)
+        opt_pth = os.path.join(self.opt['path']['checkpoint'], f'I{iter_step}_E{epoch}_opt.pth')
+        torch.save({'epoch': epoch, 'iter': iter_step, 'optimizer': opt_state}, opt_pth)
+    
     def load_network(self):
-        load_path = self.opt['path']['resume_state']
-        if load_path is not None:
-            logger.info(
-                'Loading pretrained model for G [{:s}] ...'.format(load_path))
-            gen_path = '{}_gen.pth'.format(load_path)
-            opt_path = '{}_opt.pth'.format(load_path)
-            # gen
-            network = self.netG
-            if isinstance(self.netG, nn.DataParallel):
-                network = network.module
-            network.load_state_dict(torch.load(
-                gen_path), strict=(not self.opt['model']['finetune_norm']))
-            # network.load_state_dict(torch.load(
-            #     gen_path), strict=False)
-            if self.opt['phase'] == 'train':
-                # optimizer
-                opt = torch.load(opt_path)
-                self.optG.load_state_dict(opt['optimizer'])
-                self.begin_step = opt['iter']
-                self.begin_epoch = opt['epoch']
+        load_base = self.opt['path']['resume_state']  # e.g., 'pretrained models/32_256'
+        network = self.netG
+        if isinstance(self.netG, torch.nn.DataParallel):
+            network = network.module
+    
+        # Generator
+        gen_st = f'{load_base}_gen.safetensors'
+        gen_pth = f'{load_base}_gen.pth'
+        if os.path.exists(gen_st):
+            logger.info(f'Loading generator from safetensors [{gen_st}]')
+            gen_state = load_file(gen_st)
+        elif os.path.exists(gen_pth):
+            logger.info(f'Loading generator from pth [{gen_pth}]')
+            gen_state = torch.load(gen_pth, map_location='cpu')
+        else:
+            raise FileNotFoundError(f'No generator file found ({gen_st} or {gen_pth})')
+        network.load_state_dict(gen_state, strict=(not self.opt['model']['finetune_norm']))
+    
+        if self.opt['phase'] == 'train':
+            # Optimizer
+            opt_st = f'{load_base}_opt.safetensors'
+            opt_pth = f'{load_base}_opt.pth'
+            if os.path.exists(opt_st):
+                logger.info(f'Loading optimizer from safetensors [{opt_st}]')
+                opt_state = load_file(opt_st)
+                self.begin_epoch = int(opt_state.get('epoch', 0).item()) if 'epoch' in opt_state else 0
+                self.begin_step = int(opt_state.get('iter', 0).item()) if 'iter' in opt_state else 0
+            elif os.path.exists(opt_pth):
+                logger.info(f'Loading optimizer from pth [{opt_pth}]')
+                tmp = torch.load(opt_pth, map_location='cpu')
+                opt_state = tmp['optimizer']
+                self.begin_epoch = tmp.get('epoch', 0)
+                self.begin_step = tmp.get('iter', 0)
+            else:
+                raise FileNotFoundError(f'No optimizer file found ({opt_st} or {opt_pth})')
+    
+            self.optG.load_state_dict(opt_state)
