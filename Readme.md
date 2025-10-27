@@ -48,3 +48,8 @@ This repository implements diffusion-based super-resolution for soil tomography,
 
     ```--phase```: Specify the mode (val for inference).  
     ```-c```: Path to the YAML configuration file.  
+
+
+# Citation
+
+If you use this software, please cite it as below...
