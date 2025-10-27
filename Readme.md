@@ -20,8 +20,6 @@ This repository implements diffusion-based super-resolution for soil tomography,
 
 ## Installation
 
-Install SR3-XCT using one of the following methods:
-
 **Build from source:**
 
 1. Clone the SR3-XCT repository:
@@ -41,7 +39,7 @@ Install SR3-XCT using one of the following methods:
 
 ## Running inference using pretrained models
 
-1. Ensure the model weights (```.pth``` or ```.safetensors```  are in pretrained models folder
+1. Ensure the model weights (```.pth``` or ```.safetensors```_  are in pretrained models folder
    
 2. **Prepare Input Data**
 
