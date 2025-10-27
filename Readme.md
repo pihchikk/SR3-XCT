@@ -39,7 +39,7 @@ This repository implements diffusion-based super-resolution for soil tomography,
 
 ## Running inference using pretrained models
 
-1. Ensure the model weights (```.pth``` or ```.safetensors```_  are in pretrained models folder
+1. Ensure the model weights (```.pth``` or ```.safetensors```)  are in pretrained models folder
    
 2. **Prepare Input Data**
 
