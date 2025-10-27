@@ -43,7 +43,7 @@ This repository implements diffusion-based super-resolution for soil tomography,
    
 2. **Prepare Input Data**
 
-   Place your low-resolution input images in the ```example_data/lr_32``` folder
+   Place your low-resolution input images in the ```example_data/lr_32``` or ```example_data/lr_64``` folder
 
 4. **Running inference**
 
