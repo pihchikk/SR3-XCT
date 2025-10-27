@@ -24,21 +24,19 @@ This repository implements diffusion-based super-resolution for soil tomography,
    pip install -r requirements.txt
    ```
 
-2. [Download the pretrained model](https://drive.google.com/file/d/12eU2cIx4NetzOgkx3rppj-4vpPVxuU0M/view?usp=sharing) and put it into pretrained models folder
+2. Ensure the model weights are in pretrained models folder
    
 3. **Prepare Input Data**
 
    Place your low-resolution input images in the ```example_data/lr_32``` folder
 
-5. **Running inference**
+4. **Running inference**
    Run:
    ```bash
-   python sr3.py --phase val -c config/inference/32_256/deep.yaml
+   python sr3.py --phase val -c config/inference/32_256/x8.yaml
    ```
 
     Arguments 
 
     ```--phase```: Specify the mode (val for inference).  
     ```-c```: Path to the YAML configuration file.  
-    ```--num_iterations```: (Optional)  Number of refinement steps for better structure (default is 1).
-
