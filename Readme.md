@@ -1,3 +1,5 @@
+![License](https://img.shields.io/github/license/pihchikk/SR3-XCT?style=flat&logo=opensourceinitiative&logoColor=white&color=blue)
+
 # Image Super-Resolution via Iterative Refinement for Soil Tomography
 
 This repository implements diffusion-based super-resolution for soil tomography, adapted from [Image-Super-Resolution-via-Iterative-Refinement](https://github.com/Janspiry/Image-Super-Resolution-via-Iterative-Refinement).
