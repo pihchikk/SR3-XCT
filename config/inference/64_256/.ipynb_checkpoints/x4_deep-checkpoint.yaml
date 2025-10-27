@@ -8,7 +8,7 @@ path:
   tb_logger: tb_logger
   results: results
   checkpoint: checkpoint
-  resume_state: pretrained models/I530000_E120
+  resume_state: pretrained models/64_256_deep
 datasets:
   train:
     name: soilCT

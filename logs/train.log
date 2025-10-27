@@ -1,13 +1,13 @@
-25-10-27 00:37:21.580 - INFO:   name: soilCT_x8_deep
+25-10-27 03:17:33.192 - INFO:   name: soilCT
   phase: val
   gpu_ids: [0]
-  distributed: False
+  distributed: True
   path:[
     log: logs
     tb_logger: tb_logger
     results: results
     checkpoint: checkpoint
-    resume_state: pretrained models/32_256
+    resume_state: pretrained models/64_256_deep
   ]
   datasets:[
     train:[
@@ -15,10 +15,10 @@
       mode: LRHR
       dataroot: example data
       datatype: img
-      l_resolution: 32
+      l_resolution: 64
       r_resolution: 256
-      batch_size: 12
-      num_workers: 8
+      batch_size: 4
+      num_workers: 2
       use_shuffle: True
       data_len: -1
     ]
@@ -27,7 +27,7 @@
       mode: LRHR
       dataroot: example data
       datatype: img
-      l_resolution: 32
+      l_resolution: 64
       r_resolution: 256
       data_len: -1
     ]
@@ -39,24 +39,24 @@
       in_channel: 2
       out_channel: 1
       inner_channel: 64
-      norm_groups: 16
-      channel_multiplier: [1, 1, 2, 2, 4, 4]
-      attn_res: [8, 16]
-      res_blocks: 2
+      num_groups: [16, 32]
+      channel_multiplier: [1, 2, 4, 8, 8, 16]
+      attn_res: [8, 16, 32]
+      res_blocks: 4
       dropout: 0.2
     ]
     beta_schedule:[
       train:[
-        schedule: cosine
-        n_timestep: 5000
-        linear_start: 1e-05
-        linear_end: 0.02
+        schedule: linear
+        n_timestep: 10000
+        linear_start: 1e-08
+        linear_end: 0.03
       ]
       val:[
-        schedule: cosine
-        n_timestep: 5000
-        linear_start: 1e-05
-        linear_end: 0.02
+        schedule: linear
+        n_timestep: 10000
+        linear_start: 1e-08
+        linear_end: 0.03
       ]
     ]
     diffusion:[
@@ -81,13 +81,14 @@
     ]
   ]
   wandb:[
-    project: sr_soilCTx8_deep
+    project: sr_soilCT_val
   ]
 
-25-10-27 00:37:21.603 - INFO: Dataset [LRHRDataset - soilVal] is created.
-25-10-27 00:37:21.603 - INFO: Initial Dataset Finished
-25-10-27 00:37:22.546 - INFO: Loading generator from safetensors [pretrained models/32_256_gen.safetensors]
-25-10-27 00:37:23.040 - INFO: Model [DDPM] is created.
-25-10-27 00:37:23.040 - INFO: Initial Model Finished
-25-10-27 00:37:23.040 - INFO: Resuming training from epoch: 0, iter: 0.
-25-10-27 00:37:23.065 - INFO: Begin Model Evaluation.
+25-10-27 03:17:33.203 - INFO: Dataset [LRHRDataset - soilVal] is created.
+25-10-27 03:17:33.203 - INFO: Initial Dataset Finished
+25-10-27 03:17:33.748 - INFO: generated new fontManager
+25-10-27 03:17:36.989 - INFO: Loading generator from safetensors [pretrained models/64_256_deep_gen.safetensors]
+25-10-27 03:17:53.445 - INFO: Model [DDPM] is created.
+25-10-27 03:17:53.445 - INFO: Initial Model Finished
+25-10-27 03:17:53.445 - INFO: Resuming training from epoch: 0, iter: 0.
+25-10-27 03:17:53.446 - INFO: Begin Model Evaluation.
