@@ -63,6 +63,6 @@ This repository implements diffusion-based super-resolution for soil tomography,
     ```-c```: Path to the YAML configuration file.  
 
 
-# Citation
+## Citation
 
 If you use this software, please cite it as below...
