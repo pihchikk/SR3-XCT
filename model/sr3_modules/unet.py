@@ -142,19 +142,78 @@ class SelfAttention(nn.Module):
         return out + input
 
 
+class CrossAttention(nn.Module):
+    """Cross-attention module for better conditioning on low-resolution input"""
+    def __init__(self, in_channel, context_channel=None, n_head=4, norm_groups=32):
+        super().__init__()
+
+        self.n_head = n_head
+        context_channel = context_channel or in_channel
+
+        self.norm = nn.GroupNorm(norm_groups, in_channel)
+        self.norm_context = nn.GroupNorm(norm_groups, context_channel)
+
+        # Query from main features, Key and Value from context
+        self.to_q = nn.Conv2d(in_channel, in_channel, 1, bias=False)
+        self.to_k = nn.Conv2d(context_channel, in_channel, 1, bias=False)
+        self.to_v = nn.Conv2d(context_channel, in_channel, 1, bias=False)
+        self.out = nn.Conv2d(in_channel, in_channel, 1)
+
+    def forward(self, x, context=None):
+        """
+        Args:
+            x: main features [B, C, H, W]
+            context: conditioning features (e.g., LR image features) [B, C', H, W]
+        """
+        if context is None:
+            context = x
+
+        batch, channel, height, width = x.shape
+        n_head = self.n_head
+        head_dim = channel // n_head
+
+        # Normalize inputs
+        x_norm = self.norm(x)
+        context_norm = self.norm_context(context)
+
+        # Generate Q, K, V
+        query = self.to_q(x_norm).view(batch, n_head, head_dim, height, width)
+        key = self.to_k(context_norm).view(batch, n_head, head_dim, height, width)
+        value = self.to_v(context_norm).view(batch, n_head, head_dim, height, width)
+
+        # Compute attention
+        attn = torch.einsum(
+            "bnchw, bncyx -> bnhwyx", query, key
+        ).contiguous() / math.sqrt(channel)
+        attn = attn.view(batch, n_head, height, width, -1)
+        attn = torch.softmax(attn, -1)
+        attn = attn.view(batch, n_head, height, width, height, width)
+
+        # Apply attention to values
+        out = torch.einsum("bnhwyx, bncyx -> bnchw", attn, value).contiguous()
+        out = self.out(out.view(batch, channel, height, width))
+
+        return out + x
+
+
 class ResnetBlocWithAttn(nn.Module):
-    def __init__(self, dim, dim_out, *, noise_level_emb_dim=None, norm_groups=32, dropout=0, with_attn=False):
+    def __init__(self, dim, dim_out, *, noise_level_emb_dim=None, norm_groups=32, dropout=0, with_attn=False, with_cross_attn=False, context_dim=None):
         super().__init__()
         self.with_attn = with_attn
+        self.with_cross_attn = with_cross_attn
         self.res_block = ResnetBlock(
             dim, dim_out, noise_level_emb_dim, norm_groups=norm_groups, dropout=dropout)
         if with_attn:
             self.attn = SelfAttention(dim_out, norm_groups=norm_groups)
+        if with_cross_attn:
+            self.cross_attn = CrossAttention(dim_out, context_channel=context_dim, norm_groups=norm_groups)
 
-    def forward(self, x, time_emb):
+    def forward(self, x, time_emb, context=None):
         x = self.res_block(x, time_emb)
-        if(self.with_attn):
+        if self.with_attn:
             x = self.attn(x)
+        if self.with_cross_attn and context is not None:
+            x = self.cross_attn(x, context)
         return x
 
 
@@ -170,9 +229,11 @@ class UNet(nn.Module):
         res_blocks=3,
         dropout=0,
         with_noise_level_emb=True,
-        image_size=128
+        image_size=128,
+        use_cross_attn=True  # Enable cross-attention for better conditioning
     ):
         super().__init__()
+        self.use_cross_attn = use_cross_attn
 
         if with_noise_level_emb:
             noise_level_channel = inner_channel
@@ -192,13 +253,23 @@ class UNet(nn.Module):
         now_res = image_size
         downs = [nn.Conv2d(in_channel, inner_channel,
                            kernel_size=3, padding=1)]
+
+        # Add conditioning encoder for cross-attention
+        if self.use_cross_attn:
+            # Separate encoder for LR conditioning (processes first channel separately)
+            self.condition_encoder = nn.Conv2d(1, inner_channel, kernel_size=3, padding=1)
+
         for ind in range(num_mults):
             is_last = (ind == num_mults - 1)
             use_attn = (now_res in attn_res)
             channel_mult = inner_channel * channel_mults[ind]
             for _ in range(0, res_blocks):
+                # Enable cross-attention at attention resolutions for better conditioning
+                use_cross_attn = self.use_cross_attn and use_attn
                 downs.append(ResnetBlocWithAttn(
-                    pre_channel, channel_mult, noise_level_emb_dim=noise_level_channel, norm_groups=norm_groups, dropout=dropout, with_attn=use_attn))
+                    pre_channel, channel_mult, noise_level_emb_dim=noise_level_channel,
+                    norm_groups=norm_groups, dropout=dropout, with_attn=use_attn,
+                    with_cross_attn=use_cross_attn, context_dim=inner_channel))
                 feat_channels.append(channel_mult)
                 pre_channel = channel_mult
             if not is_last:
@@ -209,9 +280,9 @@ class UNet(nn.Module):
 
         self.mid = nn.ModuleList([
             ResnetBlocWithAttn(pre_channel, pre_channel, noise_level_emb_dim=noise_level_channel, norm_groups=norm_groups,
-                               dropout=dropout, with_attn=True),
+                               dropout=dropout, with_attn=True, with_cross_attn=self.use_cross_attn, context_dim=inner_channel),
             ResnetBlocWithAttn(pre_channel, pre_channel, noise_level_emb_dim=noise_level_channel, norm_groups=norm_groups,
-                               dropout=dropout, with_attn=False)
+                               dropout=dropout, with_attn=False, with_cross_attn=False)
         ])
 
         ups = []
@@ -220,9 +291,11 @@ class UNet(nn.Module):
             use_attn = (now_res in attn_res)
             channel_mult = inner_channel * channel_mults[ind]
             for _ in range(0, res_blocks+1):
+                # Enable cross-attention at attention resolutions in decoder too
+                use_cross_attn = self.use_cross_attn and use_attn
                 ups.append(ResnetBlocWithAttn(
                     pre_channel+feat_channels.pop(), channel_mult, noise_level_emb_dim=noise_level_channel, norm_groups=norm_groups,
-                        dropout=dropout, with_attn=use_attn))
+                        dropout=dropout, with_attn=use_attn, with_cross_attn=use_cross_attn, context_dim=inner_channel))
                 pre_channel = channel_mult
             if not is_last:
                 ups.append(Upsample(pre_channel))
@@ -236,23 +309,31 @@ class UNet(nn.Module):
         t = self.noise_level_mlp(time) if exists(
             self.noise_level_mlp) else None
 
+        # Extract conditioning context (LR image) for cross-attention
+        # Input format: [LR_condition, noisy_HR] concatenated along channel dim
+        context = None
+        if self.use_cross_attn and x.shape[1] >= 2:
+            # First channel is the LR condition, extract and encode it
+            lr_condition = x[:, 0:1, :, :]  # Extract first channel [B, 1, H, W]
+            context = self.condition_encoder(lr_condition)  # Encode to feature space
+
         feats = []
         for layer in self.downs:
             if isinstance(layer, ResnetBlocWithAttn):
-                x = layer(x, t)
+                x = layer(x, t, context)
             else:
                 x = layer(x)
             feats.append(x)
 
         for layer in self.mid:
             if isinstance(layer, ResnetBlocWithAttn):
-                x = layer(x, t)
+                x = layer(x, t, context)
             else:
                 x = layer(x)
 
         for layer in self.ups:
             if isinstance(layer, ResnetBlocWithAttn):
-                x = layer(torch.cat((x, feats.pop()), dim=1), t)
+                x = layer(torch.cat((x, feats.pop()), dim=1), t, context)
             else:
                 x = layer(x)
 

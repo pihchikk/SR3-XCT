@@ -38,6 +38,15 @@ class DDPM(BaseModel):
 
             self.optG = torch.optim.Adam(
                 optim_params, lr=opt['train']["optimizer"]["lr"])
+
+            # Add learning rate scheduler with cosine annealing
+            # This gradually reduces learning rate over training for better convergence
+            self.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                self.optG,
+                T_max=opt['train']['n_iter'],
+                eta_min=opt['train']["optimizer"]["lr"] * 0.01  # Minimum LR is 1% of initial
+            )
+
             self.log_dict = OrderedDict()
         self.load_network()
         #self.print_network()
@@ -58,8 +67,12 @@ class DDPM(BaseModel):
         l_pix.backward()
         self.optG.step()
 
+        # Step the learning rate scheduler
+        self.scheduler.step()
+
         # set log
         self.log_dict['l_pix'] = l_pix.item()
+        self.log_dict['lr'] = self.optG.param_groups[0]['lr']  # Log current learning rate
 
     def test(self, continous=False):
         self.netG.eval()
@@ -142,12 +155,18 @@ class DDPM(BaseModel):
         opt_st_path = os.path.join(self.opt['path']['checkpoint'], f'I{iter_step}_E{epoch}_opt.safetensors')
         save_file(opt_state, opt_st_path)
         logger.info(f'Saved optimizer (safetensors) in [{opt_st_path}]')
-    
+
+        # Scheduler
+        scheduler_state = self.scheduler.state_dict()
+        scheduler_st_path = os.path.join(self.opt['path']['checkpoint'], f'I{iter_step}_E{epoch}_scheduler.safetensors')
+        save_file(scheduler_state, scheduler_st_path)
+        logger.info(f'Saved scheduler (safetensors) in [{scheduler_st_path}]')
+
         # Optional .pth backup
         gen_pth = os.path.join(self.opt['path']['checkpoint'], f'I{iter_step}_E{epoch}_gen.pth')
         torch.save(gen_state, gen_pth)
         opt_pth = os.path.join(self.opt['path']['checkpoint'], f'I{iter_step}_E{epoch}_opt.pth')
-        torch.save({'epoch': epoch, 'iter': iter_step, 'optimizer': opt_state}, opt_pth)
+        torch.save({'epoch': epoch, 'iter': iter_step, 'optimizer': opt_state, 'scheduler': scheduler_state}, opt_pth)
     
     def load_network(self):
         load_base = self.opt['path']['resume_state']  # e.g., 'pretrained models/32_256'
@@ -185,5 +204,20 @@ class DDPM(BaseModel):
                 self.begin_step = tmp.get('iter', 0)
             else:
                 raise FileNotFoundError(f'No optimizer file found ({opt_st} or {opt_pth})')
-    
+
             self.optG.load_state_dict(opt_state)
+
+            # Scheduler
+            scheduler_st = f'{load_base}_scheduler.safetensors'
+            scheduler_pth = f'{load_base}_scheduler.pth'
+            if os.path.exists(scheduler_st):
+                logger.info(f'Loading scheduler from safetensors [{scheduler_st}]')
+                scheduler_state = load_file(scheduler_st)
+                self.scheduler.load_state_dict(scheduler_state)
+            elif os.path.exists(opt_pth):
+                # Try to load from pth if safetensors doesn't exist
+                tmp = torch.load(opt_pth, map_location='cpu')
+                if 'scheduler' in tmp:
+                    logger.info(f'Loading scheduler from pth [{opt_pth}]')
+                    self.scheduler.load_state_dict(tmp['scheduler'])
+            # If scheduler state doesn't exist, just use fresh scheduler (backward compatibility)

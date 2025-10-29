@@ -68,7 +68,7 @@ class VGG19Gray(nn.Module):
         return self.vgg_layers(x
                               )
         
-#vgg_gray = VGG19Gray().eval()
+vgg_gray = VGG19Gray().eval()
 
 # Perceptual Loss
 def perceptual_loss(gen_img, hr_img):
@@ -306,13 +306,20 @@ class GaussianDiffusion(nn.Module):
 
         # Compute various losses
         l1_loss = self.loss_func(noise, x_recon)
-        #perceptual_loss_value = perceptual_loss(x_recon, x_start)
-        #multi_scale_loss_value = multi_scale_loss(x_recon, x_start)
-        ssim_loss_value = ssim_loss(x_recon, x_start) #**2
 
-        # Total generator loss
-        g_loss = l1_loss + ssim_loss_value*0.05 #0.02 #0.05 #0.1
-        #print(perceptual_loss_value)
+        # Perceptual loss (VGG-based feature matching)
+        perceptual_loss_value = perceptual_loss(x_recon, x_start)
+
+        # Multi-scale loss for better detail preservation
+        multi_scale_loss_value = multi_scale_loss(x_recon, x_start)
+
+        # SSIM loss for structural similarity
+        ssim_loss_value = ssim_loss(x_recon, x_start)
+
+        # Total generator loss with balanced weights
+        # L1: primary reconstruction, SSIM: structure, Perceptual: features, Multi-scale: details
+        g_loss = l1_loss + ssim_loss_value*0.05 + perceptual_loss_value*0.01 + multi_scale_loss_value*0.01
+
         return g_loss
 
     def forward(self, x, *args, **kwargs):

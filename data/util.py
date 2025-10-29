@@ -35,13 +35,41 @@ def augment(img_list, hflip=True, rot=True, split='val'):
     vflip = rot and (split == 'train' and random.random() < 0.5)
     rot90 = rot and (split == 'train' and random.random() < 0.5)
 
+    # Advanced augmentations for soil CT images (only during training)
+    add_gaussian_noise = split == 'train' and random.random() < 0.3
+    add_gaussian_blur = split == 'train' and random.random() < 0.2
+    adjust_intensity = split == 'train' and random.random() < 0.3
+
     def _augment(img):
+        # Geometric augmentations
         if hflip:
             img = img[:, ::-1, :]
         if vflip:
             img = img[::-1, :, :]
         if rot90:
             img = img.transpose(1, 0, 2)
+
+        # Intensity augmentations (simulate different scanning conditions)
+        if adjust_intensity:
+            # Random brightness and contrast adjustment
+            alpha = random.uniform(0.85, 1.15)  # Contrast
+            beta = random.uniform(-0.1, 0.1)    # Brightness
+            img = np.clip(alpha * img + beta, 0, 1)
+
+        # Gaussian noise (simulate scanning noise)
+        if add_gaussian_noise:
+            noise_std = random.uniform(0.01, 0.05)
+            noise = np.random.normal(0, noise_std, img.shape)
+            img = np.clip(img + noise, 0, 1)
+
+        # Gaussian blur (simulate different scanning resolutions)
+        if add_gaussian_blur:
+            from scipy.ndimage import gaussian_filter
+            sigma = random.uniform(0.3, 0.8)
+            # Apply blur channel-wise for grayscale
+            for c in range(img.shape[2]):
+                img[:, :, c] = gaussian_filter(img[:, :, c], sigma=sigma)
+
         return img
 
     return [_augment(img) for img in img_list]
